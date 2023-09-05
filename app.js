@@ -97,7 +97,8 @@ io.on('connection', (socket) => {
   })
 
   socket.on('loadChatMessage', () => {
-    console.log('傳輸聊天記錄')
+    console.log(`傳輸聊天記錄: ${messages}`)
+    //const result = JSON.stringify(messages)
     io.emit('messageLoadding', messages)
   })
 
