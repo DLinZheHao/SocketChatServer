@@ -15,7 +15,7 @@ const io = socket(server);
 var count = 0
 var userList = []
 var typingUsers = {};
-var messages = {}
+var messages = []
 
 // open database in memory
 let db = new sqlite3.Database('./messageChat.db', (err) => {
@@ -67,18 +67,19 @@ db.all(getDataSql, [], (err, rows) => {
     console.error(`取出資料發生錯誤：${err}`)
   } 
 
-  let i = 0;
+  // let i = 0;
 
   rows.forEach(row => {
-    messages[i] = {
+    let readMessage = {
       nickname: row.nickname,
       message: row.message,
       sendTime: row.sendTime
     }
+    messages.push(readMessage)
 
-    i++ // 增加索引值
+   // i++ // 增加索引值
   })
-  console.log(messages)
+  //console.log(messages)
 })
 
 // -----------------------------------------------------------------------
@@ -98,8 +99,10 @@ io.on('connection', (socket) => {
 
   socket.on('loadChatMessage', () => {
     console.log(`傳輸聊天記錄: ${messages}`)
-    //const result = JSON.stringify(messages)
-    io.emit('messageLoadding', messages)
+    const messageObject = { messages }
+    const result = JSON.stringify(messageObject)
+    // console.log(result)
+    io.emit('messageLoadding', result)
   })
 
   socket.on('disconnect', () => {
@@ -143,7 +146,7 @@ io.on('connection', (socket) => {
       message: message,
       sendTime: currentDateTime
     }
-    const sql = 'INSERT INTO messages  (nickname, message, sendTime) VALUES (?, ?, ?)'
+    const sql = 'INSERT INTO messages (nickname, message, sendTime) VALUES (?, ?, ?)'
     const params = [newMessage.nickname, newMessage.message, newMessage.sendTime]
 
     db.run(sql, params, (err) => {
@@ -152,12 +155,13 @@ io.on('connection', (socket) => {
         return
       }
       console.log(`插入新訊息${this}`)
+      messages[message.length] = newMessage 
     })
 
     // 解除正在輸入人員
     delete typingUsers[clientNickname];
     io.emit("userTypingUpdate", typingUsers);
-    io.emit('newChatMessage', clientNickname, message, currentDateTime);
+    io.emit('newChatMessage', newMessage.nickname, newMessage.message, newMessage.sendTime);
   });
 
 
