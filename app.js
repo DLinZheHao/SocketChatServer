@@ -39,13 +39,14 @@ db.get(query, [], (err, row) => {
 
   if (!row) {
     // 表不存在，建立表
-    const createTableQuery = `
+    const createTableQuery = 
+    `
       CREATE TABLE ${tableName} (
         nickname TEXT,
         message TEXT,
         sendTime TEXT
       );
-    `;
+    `
 
     db.run(createTableQuery, [], (createErr) => {
       if (createErr) {
@@ -53,7 +54,8 @@ db.get(query, [], (err, row) => {
       } else {
         console.log(`成功建立表 '${tableName}'。`);
       }
-    });
+    })
+
   } else {
     console.log(`表 '${tableName}' 已存在。`);
   }
@@ -66,9 +68,7 @@ db.all(getDataSql, [], (err, rows) => {
   if (err) {
     console.error(`取出資料發生錯誤：${err}`)
   } 
-
-  // let i = 0;
-
+  // 將讀取到的資料裝入 array
   rows.forEach(row => {
     let readMessage = {
       nickname: row.nickname,
@@ -76,10 +76,7 @@ db.all(getDataSql, [], (err, rows) => {
       sendTime: row.sendTime
     }
     messages.push(readMessage)
-
-   // i++ // 增加索引值
   })
-  //console.log(messages)
 })
 
 // -----------------------------------------------------------------------
@@ -136,7 +133,7 @@ io.on('connection', (socket) => {
     io.emit("userExitUpdate", clientNickname);
   });
 
-
+  // 新訊息輸入
   socket.on('chatMessage', (clientNickname, message) => {
     var currentDateTime = new Date().toLocaleString();
     
@@ -164,7 +161,7 @@ io.on('connection', (socket) => {
     io.emit('newChatMessage', newMessage.nickname, newMessage.message, newMessage.sendTime);
   });
 
-
+  // 使用者連接
   socket.on("connectUser", (clientNickname) => {
       var message = "User " + clientNickname + " was connected.";
       console.log(message);
@@ -192,14 +189,14 @@ io.on('connection', (socket) => {
       io.emit("userConnectUpdate", userInfo)
   });
 
-
+  // 使用者正在輸入
   socket.on("startType", (clientNickname) => {
     console.log("User " + clientNickname + " is writing a message...");
     typingUsers[clientNickname] = 1;
     io.emit("userTypingUpdate", typingUsers);
   });
 
-
+  // 使用者停止輸入
   socket.on("stopType", (clientNickname) => {
     console.log("User " + clientNickname + " has stopped writing a message...");
     delete typingUsers[clientNickname];
@@ -207,14 +204,3 @@ io.on('connection', (socket) => {
   });
 
 });
-
-
-
-//   socket.on('message', (data) => {
-//     console.log('Message:', data);
-//     io.emit('message', data);
-//   });
-
-//   socket.on('disconnect', () => {
-//     console.log('A user disconnected');
-//   });
