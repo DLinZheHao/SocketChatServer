@@ -95,7 +95,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('loadChatMessage', () => {
-    //console.log(`傳輸聊天記錄: ${messages}`)
+    console.log(`傳輸聊天記錄: ${messages}`)
     const messageObject = { messages }
     const result = JSON.stringify(messageObject)
     // console.log(result)
