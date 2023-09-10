@@ -16,6 +16,7 @@ var count = 0
 var userList = []
 var typingUsers = {};
 var messages = []
+var chatUser = []
 
 // open database in memory
 let db = new sqlite3.Database('./messageChat.db', (err) => {
@@ -28,6 +29,7 @@ let db = new sqlite3.Database('./messageChat.db', (err) => {
 // -----------------------------------------------------------------------
 // 表的名稱
 const tableName = 'messages'; // 替換成你要查看的表的名稱
+
 // 查詢表是否存在
 const query = `SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}';`;
 
@@ -62,9 +64,9 @@ db.get(query, [], (err, row) => {
 });
 
 // 從資料庫中取出儲存資料
-const getDataSql = `SELECT * FROM ${tableName} ORDER BY sendTime ASC;`
+const getDataFromSql = `SELECT * FROM ${tableName} ORDER BY sendTime ASC;`
 
-db.all(getDataSql, [], (err, rows) => {
+db.all(getDataFromSql, [], (err, rows) => {
   if (err) {
     console.error(`取出資料發生錯誤：${err}`)
   } 
@@ -163,30 +165,52 @@ io.on('connection', (socket) => {
 
   // 使用者連接
   socket.on("connectUser", (clientNickname) => {
-      var message = "User " + clientNickname + " was connected.";
-      console.log(message);
 
-      var userInfo = {};
-      var foundUser = false;
-      for (var i=0; i<userList.length; i++) {
-        if (userList[i]["nickname"] == clientNickname) {
-          userList[i]["isConnected"] = true
-          userList[i]["id"] = socket.id;
-          userInfo = userList[i];
-          foundUser = true;
-          break;
-        }
-      }
+    // 在這裡檢查輸入的 clientNickname 是否存在於 DB 之中
+    // 對結果做出相對應的廣播
+    // 要檢查的 ID
+    const targetNickname = clientNickname;
 
-      if (!foundUser) {
-        userInfo["id"] = socket.id;
-        userInfo["nickname"] = clientNickname;
-        userInfo["isConnected"] = true
-        userList.push(userInfo);
-      }
+    // 使用 SQL 查詢確認表格存在並檢查 ID 是否存在
+    const sqlQuery = `SELECT 1 FROM User WHERE nickname = ? LIMIT 1`;
+      db.get(sqlQuery, [targetNickname], (err, row) => {
+          if (err) {
+              console.error(err.message);
+              return;
+          }
+          
+          if (row) {
+            var message = "User " + clientNickname + " was connected.";
+            console.log(message);
+            var userInfo = {};
+            var foundUser = false;
 
-      io.emit("userList", userList);
-      io.emit("userConnectUpdate", userInfo)
+            for (var i=0; i<userList.length; i++) {
+              if (userList[i]["nickname"] == clientNickname) {
+                userList[i]["isConnected"] = true
+                userList[i]["id"] = socket.id;
+                userInfo = userList[i];
+                foundUser = true;
+                break;
+              }
+            }
+
+            if (!foundUser) {
+              userInfo["id"] = socket.id;
+              userInfo["nickname"] = clientNickname;
+              userInfo["isConnected"] = true
+              userList.push(userInfo);
+            }
+            io.emit("LoginSuccess")
+            io.emit("userList", userList);
+            io.emit("userConnectUpdate", userInfo)
+
+          } else {
+            // 表格不存在或ID不存在
+            console.log(`User with ID ${targetNickname} does not exist.`);
+            io.emit("LoginFall")
+          }
+      });
   });
 
   // 使用者正在輸入
