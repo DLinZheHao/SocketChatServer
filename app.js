@@ -172,7 +172,7 @@ io.on('connection', (socket) => {
     const targetNickname = clientNickname;
 
     // 使用 SQL 查詢確認表格存在並檢查 ID 是否存在
-    const sqlQuery = `SELECT 1 FROM User WHERE nickname = ? LIMIT 1`;
+    const sqlQuery = `SELECT * FROM User WHERE nickname = ? LIMIT 1`;
       db.get(sqlQuery, [targetNickname], (err, row) => {
           if (err) {
               console.error(err.message);
@@ -182,6 +182,12 @@ io.on('connection', (socket) => {
           if (row) {
             var message = "User " + clientNickname + " was connected.";
             console.log(message);
+
+            const objectString = JSON.stringify(row);
+            console.log(`查詢結果：${objectString}`)
+
+
+
             var userInfo = {};
             var foundUser = false;
 
